@@ -5,13 +5,20 @@ const LoginPage = () => {
   const [OTP, setOTP] = useState(false);
   const navigate = useNavigate();
   const [MobileNumber, setMobileNumber] = useState("");
+  const [userName, setUserName] = useState("Sukhsagar");
   const [inputOtp, setInputOtp] = useState("");
 
+
   const generateOTP = async () => {
-    if (MobileNumber != "" && !isNaN(parseInt(MobileNumber))) {
-      console.log(MobileNumber);
+    if (
+      MobileNumber != "" ||
+      (userName != "" && !isNaN(parseInt(MobileNumber)))
+    ) {
+      console.log(MobileNumber, userName);
     } else {
-      alert("Mobile Number should not be empty and string");
+      alert(
+        "username and Mobile Number should not be empty and Mobile Number should be string"
+      );
       return false;
     }
 
@@ -29,7 +36,7 @@ const LoginPage = () => {
       );
 
       const response = await res.json();
-      console.log(response);
+      // console.log(response);
     } catch (error) {
       console.log("Error while generating OTP: " + error);
     }
@@ -37,15 +44,17 @@ const LoginPage = () => {
     setOTP(true);
   };
 
-  const veryfiyMobileOTP = async () => {
-    if (inputOtp != "" || MobileNumber != "" || !isNaN(parseInt(inputOtp))) {
-      console.log(inputOtp);
-    } else {
-      alert("Mobile Number and OTP should not be empty and string");
+  const verifyMobileOTP = async () => {
+    // Input validation
+    if (!inputOtp || !MobileNumber || !userName || isNaN(parseInt(inputOtp))) {
+      alert("username and Mobile Number and OTP should not be empty ");
       return false;
     }
 
-    const URL = "https://apis.allsoft.co/api/documentManagement//validateOTP";
+    // console.log("Entered OTP:", inputOtp);
+
+    const URL = "https://apis.allsoft.co/api/documentManagement/validateOTP";
+
     try {
       const res = await fetch(URL, {
         method: "POST",
@@ -54,16 +63,28 @@ const LoginPage = () => {
         },
         body: JSON.stringify({
           mobile_number: MobileNumber,
-          otp: "",
+          otp: inputOtp,
         }),
       });
+
       const response = await res.json();
-      console.log(response);
-      if (response) {
+      console.log(response.data.user_name);
+      if (response.status === true && response.data.user_name === userName) {
+        localStorage.setItem("login_details", JSON.stringify(response.data));
         navigate("/admin");
+      } else {
+        alert(
+          "Invalid OTP or user [otp : " +
+            inputOtp +
+            "user:" +
+            userName +
+            "]! Please try again! " +
+            (response.message || "")
+        );
+        navigate("/");
       }
     } catch (error) {
-      console.log("Error while verifying OTP : " + error);
+      console.log("Error while verifying OTP:", error);
     }
   };
 
@@ -84,14 +105,14 @@ const LoginPage = () => {
                 <i className="bi bi-person-fill me-2" />
                 User Name
               </label>
-              <input type="text" className="form-control" id="userName" />
-            </div>
-            <div className="mb-3">
-              <label htmlFor="password" className="form-label">
-                <i className="bi bi-lock-fill me-2"></i>
-                Password
-              </label>
-              <input type="password" className="form-control" id="password" />
+              <input
+                type="text"
+                className="form-control"
+                id="userName"
+                placeholder="default user:Sukhsagar"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+              />
             </div>
             <div className="mb-3">
               <label htmlFor="mobileNumber" className="form-label">
@@ -126,7 +147,7 @@ const LoginPage = () => {
                     onChange={(e) => setInputOtp(e.target.value)}
                   />
                 </div>
-                <button className="btn btn-primary" onClick={veryfiyMobileOTP}>
+                <button className="btn btn-primary" onClick={verifyMobileOTP}>
                   Verify OTP
                 </button>
               </>
@@ -143,4 +164,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
